@@ -7,11 +7,11 @@ import com.tngdev.archcompapp.network.ApiResource
 import com.tngdev.archcompapp.repository.PokemonRepository
 
 class MainViewModel : ViewModel() {
-    private lateinit var pokemons : LiveData<ApiResource<List<Pokemon>>>
+    private lateinit var pokemons : LiveData<ApiResource<LiveData<List<Pokemon>>>>
 
-    fun getPokemons() : LiveData<ApiResource<List<Pokemon>>> {
+    fun getPokemons() : LiveData<ApiResource<LiveData<List<Pokemon>>>> {
         if (!::pokemons.isInitialized) {
-            pokemons = PokemonRepository().getPokemon()
+            pokemons = PokemonRepository().getListPokemon()
         }
 
         return pokemons

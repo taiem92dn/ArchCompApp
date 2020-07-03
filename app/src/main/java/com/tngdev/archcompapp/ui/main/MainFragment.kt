@@ -1,11 +1,11 @@
 package com.tngdev.archcompapp.ui.main
 
-import androidx.lifecycle.ViewModelProviders
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
@@ -23,6 +23,7 @@ class MainFragment : Fragment() {
     private var _binding : MainFragmentBinding? = null
     private val binding get() = _binding!!
 
+    private var adapter : PokemonAdapter?= null
 
     private lateinit var viewModel: MainViewModel
 
@@ -37,20 +38,19 @@ class MainFragment : Fragment() {
         super.onActivityCreated(savedInstanceState)
         viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
 
-        val adapter = PokemonAdapter()
+        adapter = PokemonAdapter()
         binding.rvPokemons.adapter = adapter
-        val observer = Observer<ApiResource<List<Pokemon>>> {
+        val observer = Observer<ApiResource<LiveData<List<Pokemon>>>> {
             when (it) {
                 is ApiResource.Success -> {
-                    showSuccess()
-                    adapter.data = it.data
-                    adapter.notifyDataSetChanged()
+                    showData(it.data)
                 }
                 is ApiResource.Error -> {
+                    showData(it.data)
                     showError(it.message ?: getText(R.string.unknown_error))
-
                 }
                 is ApiResource.NoInternet -> {
+                    showData(it.data)
                     showNoInternet()
                 }
                 is ApiResource.Loading -> {
@@ -63,9 +63,17 @@ class MainFragment : Fragment() {
 
     }
 
-    private fun showSuccess() {
-        binding.pgbPokemons.visibility = View.GONE
-        binding.rvPokemons.visibility = View.VISIBLE
+    private fun showData(data : LiveData<List<Pokemon>>?) {
+        data?. let { liveData ->
+            liveData.observe(viewLifecycleOwner,
+                Observer<List<Pokemon>> {
+                    adapter?.data = it
+                    adapter?.notifyDataSetChanged()
+                })
+
+            binding.pgbPokemons.visibility = View.GONE
+            binding.rvPokemons.visibility = View.VISIBLE
+        }
     }
 
     private fun showLoading() {

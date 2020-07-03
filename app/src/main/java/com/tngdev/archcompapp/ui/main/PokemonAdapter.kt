@@ -4,6 +4,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 import com.tngdev.archcompapp.databinding.ItemPokemonBinding
 import com.tngdev.archcompapp.model.Pokemon
 
@@ -28,7 +29,10 @@ class PokemonAdapter : RecyclerView.Adapter<PokemonAdapter.PokemonVH>() {
 
     override fun onBindViewHolder(holder: PokemonVH, position: Int) {
         val item = data?.get(position)
-        holder.binding.tvPkmName.text = item?.name ?: "Don't have name"
+        Glide.with(holder.itemView)
+            .load(item?.sprites?.frontDefault)
+            .into(holder.binding.ivPkmSprite)
+        holder.binding.tvPkmName.text = String.format("${item?.name} ${item?.weight}kg")
     }
 
 
