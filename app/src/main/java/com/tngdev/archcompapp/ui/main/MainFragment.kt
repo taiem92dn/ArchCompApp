@@ -13,7 +13,9 @@ import com.tngdev.archcompapp.R
 import com.tngdev.archcompapp.databinding.MainFragmentBinding
 import com.tngdev.archcompapp.model.Pokemon
 import com.tngdev.archcompapp.network.ApiResource
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainFragment : Fragment() {
 
     companion object {
@@ -25,7 +27,7 @@ class MainFragment : Fragment() {
 
     private var adapter : PokemonAdapter?= null
 
-    private lateinit var viewModel: MainViewModel
+    private lateinit var viewModel: PokemonListViewModel
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View {
@@ -36,7 +38,7 @@ class MainFragment : Fragment() {
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(this).get(PokemonListViewModel::class.java)
 
         adapter = PokemonAdapter()
         binding.rvPokemons.adapter = adapter
@@ -44,23 +46,30 @@ class MainFragment : Fragment() {
             when (it) {
                 is ApiResource.Success -> {
                     showData(it.data)
+                    hideLoading()
                 }
                 is ApiResource.Error -> {
                     showData(it.data)
+                    hideLoading()
                     showError(it.message ?: getText(R.string.unknown_error))
                 }
                 is ApiResource.NoInternet -> {
                     showData(it.data)
+                    hideLoading()
                     showNoInternet()
                 }
                 is ApiResource.Loading -> {
                     showLoading()
+                    showData(it.data)
                 }
 
             }
         }
-        viewModel.getPokemons().observe(viewLifecycleOwner, observer)
+        viewModel.getListPokemon().observe(viewLifecycleOwner, observer)
 
+        binding.srlPokemons.setOnRefreshListener {
+            viewModel.refreshData()
+        }
     }
 
     private fun showData(data : LiveData<List<Pokemon>>?) {
@@ -70,15 +79,15 @@ class MainFragment : Fragment() {
                     adapter?.data = it
                     adapter?.notifyDataSetChanged()
                 })
-
-            binding.pgbPokemons.visibility = View.GONE
-            binding.rvPokemons.visibility = View.VISIBLE
         }
     }
 
     private fun showLoading() {
-        binding.pgbPokemons.visibility = View.VISIBLE
-        binding.rvPokemons.visibility = View.INVISIBLE
+        binding.srlPokemons.isRefreshing = true
+    }
+
+    private fun hideLoading() {
+        binding.srlPokemons.isRefreshing = false
     }
 
     private fun showError(message : CharSequence) {

@@ -1,16 +1,18 @@
 package com.tngdev.archcompapp.util
 
+import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
 import com.tngdev.archcompapp.App
+import dagger.hilt.android.components.ApplicationComponent
 
 class Utils {
     companion object {
         @JvmStatic
-        fun hasInternet() : Boolean {
-            val cm = App.instance.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        fun hasInternet(app: Application) : Boolean {
+            val cm = app.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 val activeNetwork = cm.activeNetwork ?: return false

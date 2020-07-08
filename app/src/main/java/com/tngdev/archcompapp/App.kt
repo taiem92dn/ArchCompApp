@@ -1,18 +1,12 @@
 package com.tngdev.archcompapp
 
 import android.app.Application
-import androidx.room.Room
-import com.tngdev.archcompapp.db.AppDatabase
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
-    }
-
-    companion object {
-        @JvmStatic
-        lateinit var instance : App
     }
 }

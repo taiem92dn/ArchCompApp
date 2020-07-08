@@ -1,30 +1,47 @@
 package com.tngdev.archcompapp.repository
 
+import android.app.Application
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
-import com.tngdev.archcompapp.db.PokemonDB
+import com.tngdev.archcompapp.db.dao.PokemonDao
 import com.tngdev.archcompapp.model.ListResponse
 import com.tngdev.archcompapp.model.PkmItem
 import com.tngdev.archcompapp.model.Pokemon
 import com.tngdev.archcompapp.network.ApiResource
-import com.tngdev.archcompapp.network.RetrofitApi
+import com.tngdev.archcompapp.network.PokeService
 import com.tngdev.archcompapp.util.Utils
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.concurrent.Executors
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class PokemonRepository {
+@Singleton
+class PokemonRepository @Inject constructor(
+    private val pokemonService: PokeService,
+    private val pokemonDao: PokemonDao
+){
     private val TAG = PokemonRepository::class.java.simpleName
 
-    private val pokemonService = RetrofitApi.pokeService
+    @Inject lateinit var application: Application
+
 
     fun getListPokemon(): LiveData<ApiResource<LiveData<List<Pokemon>>>> {
         val result = MutableLiveData<ApiResource<LiveData<List<Pokemon>>>>()
 
-        val data = PokemonDB.appDatabase.pokemonDao().getAll()
+        updateListPokemonRemote(result)
+
+        return result
+    }
+
+    fun updateListPokemonRemote(result: LiveData<ApiResource<LiveData<List<Pokemon>>>>) {
+        if (result !is MutableLiveData)
+            return
+
+        val data = pokemonDao.getAll()
         val limit = 20
         val checkResult = MutableLiveData<Int>(0)
         checkResult.observeForever(object : Observer<Int> {
@@ -40,7 +57,7 @@ class PokemonRepository {
         })
 
         result.value = ApiResource.Loading(data)
-        if (!Utils.hasInternet()) {
+        if (!Utils.hasInternet(application)) {
             result.value = ApiResource.NoInternet(data)
         }
         else {
@@ -66,7 +83,6 @@ class PokemonRepository {
             })
         }
 
-        return result
     }
 
     private fun getListPokemon(pkmItems: List<PkmItem>, checkResult: MutableLiveData<Int>) {
@@ -88,7 +104,7 @@ class PokemonRepository {
                 response.body()?.let {
                     checkResult.value = checkResult.value?.plus(1)
                     Executors.newSingleThreadExecutor().execute {
-                        PokemonDB.appDatabase.pokemonDao().insert(it)
+                        pokemonDao.insert(it)
                     }
                 }
                     ?: let {
